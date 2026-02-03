@@ -88,27 +88,54 @@ class FashionBrodaSpider(scrapy.Spider):
         contact = contact.strip() if contact else None
         # split the contact at the point where there is a colon and then strip whitespace from each part
         # keep only the part after the colon (the actual contact info)
-        contact = contact.split(":")[-1].strip()
+        if contact and ":" in contact:
+            contact = contact.split(":")[-1].strip()
 
         # *-------------------------------------------------------------------------------------------------------------------------------------------------
 
-        # get the category link
-        category_link = response.css(".yupoo-collapse-header a::attr(href)").getall()
-        # add a conditional to handle cases where category_link might be None, to prevent errors
-        # the for loop iterates through each link in the category_link list, stripping whitespace
-        category_link = [link.strip() if link else None for link in category_link]
+        # select all the <a> elements that hold the category links and text from the DOM for all categories
+        # that is why we are not using .get() or .getall() here, because we want the entire list of elements
+        category_node = response.css(".yupoo-collapse-header a")
 
-        # get the category text as it appears on the page
-        category_text = response.css(".yupoo-collapse-header a::text").getall()
-        # add conditionals to handle cases where category_link or category_text might be None, to prevent errors
-        # the for loop iterates through each text in the category_text list, stripping whitespace
-        category_text = [text.strip() if text else None for text in category_text]
+        # check whether the category node length matches the expected number of categories, provided above in the categories list
+        # this is a defensive programming technique to catch any discrepancies in the page structure, we use the `!=` operator to check for inequality
+        if len(category_node) != len(categories):
+            self.logger.warning(
+                f"Expected {len(categories)} categories, but found {len(category_node)} categories on the page."
+            )
 
-        # *-------------------------------------------------------------------------------------------------------------------------------------------------
+        # loop through each category node and extract the href attribute (the link) and the text content as it appears on the page
+        # we use enumerate to get both the index and the node itself,
+        for index, node in enumerate(category_node):
+            # get the link from the href attribute
+            category_links = node.attrib.get("href")
+            # check if category_links exists before stripping whitespace
+            category_links = category_links.strip() if category_links else None
+            # then convert relative link to absolute URL
+            category_links = (
+                response.urljoin(category_links) if category_links else None
+            )
 
-        # use the zip function to combine the three lists into a tuple containing corresponding elements from each list
-        # then iterate through each tuple using a for loop and unpack the values into category, category_link, and category_text variables
-        for category, link, text in zip(categories, category_link, category_text):
+            # get the text and check if it exists
+            text = node.css("::text").get()
+            # then strip whitespace, and handle cases where text might be None
+            text = text.strip() if text else None
+
+            # Defensive programming: Log a warning if link or text is missing for a category
+            if not category_links or not text:
+                self.logger.warning(
+                    f"Missing data for category at index {index}: link='{category_links}', text='{text}'"
+                )
+
+            # Attach the clean category by position (order-based mapping).
+            # We first check that the current index exists in the clean categories list
+            # to avoid IndexError if the page structure changes (e.g., extra or missing categories).
+            # If no corresponding clean category exists, we fall back to None to keep the spider safe
+            # and make the mismatch visible for later inspection.
+            category = categories[index] if index < len(categories) else None
+
+            # *-------------------------------------------------------------------------------------------------------------------------------------------------
+
             # yield a dictionary with the extracted data, for every category found on the page
             # so this yield function runs multiple times, and it must be inside the for loop
             yield {
@@ -117,5 +144,5 @@ class FashionBrodaSpider(scrapy.Spider):
                 "category": category,
                 "category_text": text,
                 # use response.urljoin to convert the relative category link to an absolute URL
-                "category_link": response.urljoin(link),
+                "category_link": category_links,
             }
