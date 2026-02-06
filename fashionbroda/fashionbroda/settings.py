@@ -7,6 +7,18 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+# import Pathlib to handle file paths
+from pathlib import Path
+
+# set the base directory of the project
+# Path to the directory containing settings.py
+SETTINGS_PATH = Path(__file__).resolve().parent
+
+# Path to the project root (where scrapy.cfg is)
+BASE_DIR = SETTINGS_PATH.parent
+
+# *-----------------------------------------------------------------------------------------------
+
 BOT_NAME = "fashionbroda"
 
 SPIDER_MODULES = ["fashionbroda.spiders"]
@@ -23,7 +35,7 @@ ROBOTSTXT_OBEY = False
 
 # Concurrency and throttling settings
 # CONCURRENT_REQUESTS = 16
-CONCURRENT_REQUESTS_PER_DOMAIN = 5
+CONCURRENT_REQUESTS_PER_DOMAIN = 10
 DOWNLOAD_DELAY = 0.5  # 500 milliseconds of delay between requests to the same domain
 
 # Disable cookies (enabled by default)

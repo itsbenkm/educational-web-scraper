@@ -1,0 +1,225 @@
+FUZZY CATEGORY RESOLUTION — ARCHITECTURAL NOTE
+
+Problem:
+Category text and links on the site may be obfuscated, unordered, or unstable.
+DOM order cannot be trusted.
+Matching categories requires probabilistic reasoning, not deterministic extraction.
+
+Key Insight:
+This is NOT scraping logic.
+This is entity resolution (interpretation of meaning).
+
+Where the code lives (IMPORTANT):
+
+1) Separate Resolver Script (FIRST, always)
+- Input: raw scraped JSON (facts only)
+- Responsibilities:
+  - normalize text
+  - fuzzy match candidates to clean categories
+  - compute confidence scores
+  - resolve conflicts
+  - log unmatched or low-confidence cases
+- Why:
+  - logic is heuristic and experimental
+  - thresholds will change
+  - mistakes must be fixed WITHOUT re-crawling
+  - easier debugging, inspection, and iteration
+- Principle:
+  "Spiders collect evidence; resolvers decide truth."
+
+2) Scrapy Pipeline (ONLY AFTER stabilization)
+- Move resolver logic into a pipeline ONLY when:
+  - matching rules are proven correct
+  - thresholds are stable
+  - edge cases are known
+  - you trust output without inspection
+- Pipelines are for:
+  - enforcing known rules
+  - automation
+  - production throughput
+- Pipelines are NOT for:
+  - experimentation
+  - probabilistic decisions
+  - logic that may need frequent tuning
+
+Rule of Thumb:
+If changing the logic should NOT require re-scraping,
+the logic does NOT belong in the spider or pipeline.
+
+Correct Sequence:
+Scrape → Store Raw Facts → Resolve Meaning (script) → Validate → (Optional) Pipeline
+
+Final Principle:
+Code that guesses meaning must remain outside the crawl until it stops guessing.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+FUZZY CATEGORY RESOLUTION — IMPLEMENTATION CHECKLIST
+
+WHEN TO USE THIS:
+- DOM order is unreliable
+- Text is obfuscated
+- Links may be random or unstable
+- Clean list is the source of truth
+
+--------------------------------
+STEP 0 — DEFINE THE BOUNDARY
+--------------------------------
+Decide:
+- Spider = extract facts only
+- Resolver = decide meaning
+- No fuzzy logic inside spiders
+
+If logic requires guessing → it lives OUTSIDE Scrapy.
+
+--------------------------------
+STEP 1 — PREPARE CLEAN CATEGORIES
+--------------------------------
+Input:
+- Clean category list (canonical truth)
+
+Actions:
+- Normalize each category name
+- Store:
+  - original name
+  - normalized form
+
+Goal:
+- Have a stable reference table for matching
+
+--------------------------------
+STEP 2 — COLLECT RAW CANDIDATES (SPIDER)
+--------------------------------
+From index page:
+- Extract ALL <a> elements
+- For each <a>:
+  - raw_text
+  - href
+  - optional metadata (position, source page)
+
+Rules:
+- No assumptions
+- No matching
+- No filtering
+- Just facts
+
+Output:
+- raw_categories.json
+
+--------------------------------
+STEP 3 — (OPTIONAL) DEEP CRAWL IF LINKS ARE RANDOM
+--------------------------------
+If index text is unreliable:
+- Visit each category link
+- Extract stronger signals:
+  - page title
+  - headers
+  - breadcrumbs
+  - repeated brand names
+
+Output:
+- enriched_categories.json
+
+--------------------------------
+STEP 4 — NORMALIZATION (CRITICAL)
+--------------------------------
+Apply IDENTICAL normalization to:
+- clean categories
+- raw candidate text
+- deep page signals (if any)
+
+Normalization includes:
+- lowercase
+- remove symbols
+- fold digits (0→o, 1→i, etc.)
+- collapse whitespace
+
+Rule:
+- If normalization differs, matching is invalid.
+
+--------------------------------
+STEP 5 — SIMILARITY SCORING
+--------------------------------
+For EACH candidate:
+- Compare against ALL clean categories
+- Compute similarity score
+- Keep:
+  - best match
+  - score
+
+Do NOT assign yet.
+
+--------------------------------
+STEP 6 — ACCEPTANCE RULES
+--------------------------------
+Decide:
+- minimum confidence threshold
+- what happens if:
+  - score is too low
+  - two categories are close
+  - no category matches
+
+Possible outcomes:
+- accept
+- reject
+- flag for review
+
+--------------------------------
+STEP 7 — CONFLICT RESOLUTION
+--------------------------------
+Check for:
+- multiple candidates matching same clean category
+- one candidate matching multiple clean categories
+
+Decide:
+- one-to-one vs many-to-one
+- highest score wins
+- duplicates logged
+
+--------------------------------
+STEP 8 — INTEGRITY CHECKS
+--------------------------------
+After resolution:
+- unmatched clean categories
+- unmatched candidates
+- duplicate assignments
+- low-confidence matches
+
+Replace:
+- length checks
+- order checks
+
+With:
+- semantic validation
+
+--------------------------------
+STEP 9 — FINAL OUTPUT
+--------------------------------
+Produce:
+- clean_category
+- raw_text
+- link
+- confidence_score (optional)
+
+This becomes the authoritative dataset.
+
+--------------------------------
+STEP 10 — DECIDE PIPELINE OR NOT
+--------------------------------
+Keep as separate script IF:
+- thresholds still change
+- logic still evolving
+- mistakes are costly
+
+Move to Scrapy pipeline ONLY IF:
+- logic is stable
+- confidence is high
+- re-scraping is unnecessary
+
+--------------------------------
+CORE RULES TO REMEMBER
+--------------------------------
+- Spiders collect evidence
+- Resolvers decide truth
+- Order is presentation, not meaning
+- If fixing logic requires re-crawling, architecture is wrong
