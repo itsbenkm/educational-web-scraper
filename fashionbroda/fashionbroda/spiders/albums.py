@@ -21,8 +21,6 @@ This should be done at system boundaries :
 # import json to handle JSON data
 import json
 
-# import pathlib to handle file paths, this is the modern way of dealing with file paths in Python,
-# it provides an object-oriented interface for working with file system paths, and it is more intuitive and easier to use than the older os.path module
 # Import scrapy module to gain web scraping capabilities
 import scrapy
 
@@ -41,15 +39,28 @@ from fashionbroda.settings import BASE_DIR
 # create a function to validate the structure of the JSON data,
 # this is important to ensure that the data we are working with is in the expected format, and to catch any issues with the data early on in the scraping process
 # this is because we will be passing the metadata from the fashion_broda.json file to the parse_category method, and we want to ensure that the data is structured correctly before we do so
-def validate_json_structure(raw_ctx):
+# pass an argument called raw_ctx which is the raw context data from the fashion_broda.json file, this is the data that we will be validating and structuring before passing it to the parse_category method
+def validate_ctx_fields_values(raw_ctx):
     # define the allowed ctx fields for validation
-    ALLOWED_CTX_FIELDS = [
+    """
+    Validate and clean context fields from JSON data.
+
+    Args:
+        raw_ctx (dict): Raw context data from fashion_broda.json
+
+    Returns:
+        dict: Validated and cleaned context data with stripped string values
+
+    Raises:
+        ValueError: If any required field is missing or empty
+    """
+    ALLOWED_CTX_FIELDS = {
         "seller",
         "contact",
         "category",
         "category_text",
         "category_link",
-    ]
+    }
 
     # create a dictionary to hold the validated context data
     clean = {}
@@ -57,14 +68,18 @@ def validate_json_structure(raw_ctx):
     # loop through each allowed ctx field and validate its presence in the raw_ctx dictionary
     for key in ALLOWED_CTX_FIELDS:
         # get the value for the current key from the raw_ctx dictionary, this will be checked from the fashion_broda.json file
+        # we do this by calling the get method on the raw_ctx dictionary, get returns the value for the specified key if it exists, otherwise it returns None,
+        #  this is useful for handling cases where the key might be missing from the raw_ctx dictionary, which would indicate an issue with the data in the fashion_broda.json file
         value = raw_ctx.get(key)
 
-        # check if the ctx field have missing or empty values
-        if not value:
+        # check if the ctx field have missing or empty values, and none values,
+        # this is important to ensure that we are working with complete and valid data, and to catch any issues with the data early on in the scraping process
+        if value is None or (isinstance(value, str) and not value.strip()):
             # raise a ValueError if any of the required fields are missing or empty, this is important to ensure that we are working with complete and valid data,
             # and to catch any issues with the data early on in the scraping process
             raise ValueError(f"Missing or empty field: {key}")
         # add the validated key-value pair to the clean dictionary, stripping any leading or trailing whitespace from string values
+        # this is done after checking that the string instace is not empty, to avoid calling strip on a None value, which would raise an AttributeError
         clean[key] = value.strip() if isinstance(value, str) else value
     # return the validated context data
     return clean
@@ -80,6 +95,8 @@ class AlbumsSpider(scrapy.Spider):
     # The allowed domains for the spider to scrape
     allowed_domains = ["fashionbroda.x.yupoo.com"]
 
+    # Custom export feeds for the scraped data, this is where we define how we want to export the scraped data,
+    # in this case we want to export it as a JSON file with UTF-8 encoding, and we want to overwrite the file if it already exists, and we want to specify the fields that we want to include in the exported data
     custom_settings = {
         "FEEDS": {
             BASE_DIR
@@ -89,7 +106,10 @@ class AlbumsSpider(scrapy.Spider):
             / "albums.json": {
                 "format": "json",
                 "encoding": "utf8",
+                # overwrite the file if it already exists,
+                # this is important to ensure that we are not appending to an old file with potentially outdated data, and to ensure that we are working with fresh data each time we run the spider
                 "overwrite": True,
+                # fields to include in the exported data, this is important to ensure that we are exporting the data in a structured format, and to specify which fields we want to include in the exported data
                 "fields": [
                     "seller",
                     "contact",
@@ -120,7 +140,6 @@ class AlbumsSpider(scrapy.Spider):
 
         # implement a try catch block to handle potential file reading errors
         try:
-
             """
             TODO
             # define the base directory, this is the directory where the current script is located, this is useful to ensure that we are reading the correct file, regardless of where the script is run from
@@ -130,12 +149,9 @@ class AlbumsSpider(scrapy.Spider):
             base_dir = Path(__file__).resolve().parents[1]
             """
 
-            # define the base directory of the project, this is the directory where the scrapy.cfg file
-            base_dir = BASE_DIR
-
             # define the path to the fashion_broda.json file, which is located in the data directory in the project root directory
             json_file_path = (
-                base_dir
+                BASE_DIR
                 / "fashionbroda"
                 / "fashionbroda"
                 / "scraped_data"
@@ -146,42 +162,48 @@ class AlbumsSpider(scrapy.Spider):
             # the file is opened in read mode, `r` with UTF-8 encoding to handle any special characters
             with open(json_file_path, "r", encoding="utf-8") as json_file:
                 # load the JSON data from the file
+                # this returns a list of dictionaries, where each dictionary represents a category with its associated metadata, this is the data that we will be using to schedule the category pages for scraping
                 data = json.load(json_file)
 
         # account for exceptions that may occur during file reading
+        # account for the file not being found error
+        except FileNotFoundError:
+            # log the error message that the JSON file was not found at the specified path, this is useful for debugging and monitoring the scraping process, to identify any issues with missing files
+            self.logger.error(f"JSON file not found at: {json_file_path}")
+            raise CloseSpider("JSON file not found")
+        # account for JSON decoding errors, which occur when the file is not in valid JSON format
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Invalid JSON format: {e}")
+            raise CloseSpider("Invalid JSON file")
+        # account for any other unexpected exceptions that may occur during file reading
         except Exception as e:
-            # if there is an error while reading the file, print the error message
-            self.logger.error(f"Error reading JSON file: {e}")
-            # raise an error that the file is missing and close the spider instance
-            raise CloseSpider("Missing file")
-
+            self.logger.error(f"Unexpected error reading JSON file: {e}")
+            raise CloseSpider("Error reading JSON file")
         # *----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
         # loop through each entry in the data list
-        for category in data:
-            # check if the url is valid, if not skip it and log a warning message, this is important to ensure that we are only working with valid URLs, and to catch any issues with the data early on in the scraping process
+        for dict in data:
+            # validate that all required fields are present and non empty
             try:
-                ctx = validate_json_structure(category)
+                ctx = validate_ctx_fields_values(dict)
             except ValueError as e:
                 # log a warning message if the JSON structure is invalid, this is useful for debugging and monitoring the scraping process, to identify any issues with the data
-                self.logger.warning(
-                    f"Invalid link in category_link: {e} in entry: {category}"
-                )
+                self.logger.warning(f"Invalid entry : {e} in entry: {dict}")
                 # skip this entry and continue to the next one
                 continue
-            # check if the category_url in the fashion_broda.json file is active, if not skip it
-            if not category.get("active", True):
+            # check if the dictionary in the fashion_broda.json file is active, if not skip it
+            if not dict.get("active", True):
                 # if it is not active, continue without failing, onto the next category_url
                 continue
 
             # yield a scrapy.Request for each category URL
             yield scrapy.Request(
                 # Give scrapy the URL to crawl, in this case the category URL, from the fashion_broda.json file
-                url=ctx["category_link"].strip(),
+                url=ctx["category_link"],
                 # Pass the category data as metadata to the parse method, using meta parameter
                 # NOTE : only unpack data when you are dealing with data from unknown source
-                # * and unpack the category dictionary directly, to validate its contents, only if it came from an external source, but for now since I control the fashion_broda.json file, it's safe, to pass the entire category dictionary'''
-                # define my namespace as 'ctx'  and pass the ctx_validator, to avoid confusion with other meta data, such as scrapy default ones, these include 'download_latency', 'depth', 'redirect_urls', 'redirect_times', 'retry_times', 'max_retry_times', etc.
+                # and unpack the category dictionary directly, to validate its contents, only if it came from an external source, but for now since I control the fashion_broda.json file, it's safe, to pass the entire category dictionary
+                # define my namespace as 'ctx'  and pass the validated context metadata, to avoid confusion with other meta data, such as scrapy default ones, these include 'download_latency', 'depth', 'redirect_urls', 'redirect_times', 'retry_times', 'max_retry_times', etc.
                 meta={"ctx": ctx},
                 # When the response is received, call the parse_category method to handle it
                 callback=self.parse_category,
@@ -199,6 +221,8 @@ class AlbumsSpider(scrapy.Spider):
             self.logger.warning(
                 f"Context data is missing in the response meta for URL: {response.url}"
             )
+            # return early to avoid processing with empty context
+            return
 
         # *----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -231,21 +255,24 @@ class AlbumsSpider(scrapy.Spider):
                 self.logger.warning(f"Album URL is missing for album: {album.attrib}")
                 continue
 
-            # convert relative album URL to absolute URL and strip whitespace
-            album_url = response.urljoin(album_url.strip())
+            # strip whitespace from the album URL
+            album_url = album_url.strip()
+            # convert relative album URL to absolute URL using response.urljoin, this is important to ensure that we are working with complete URLs, and to handle cases where the album URL is relative rather than absolute
+            album_url = response.urljoin(album_url)
 
             # pack the data for the album into a dictionary, this includes the metadata from the fashion_broda.json file as well as the album URL and page number
             # create an AlbumItem instance to structure the scraped data, we can pass ctx dictionary using the double asterisks (**) to unpack its contents into the AlbumItem fields,
             # this can be done cause we safely validated that the ctx dictionary contains only the fields defined in the AlbumItem class
             item = AlbumItem(
                 {
+                    # unpack the validated ctx metadata to be passed to the albumitem for output
                     **ctx,
                     "page_url": response.url,
                     "page_number": active_page,
                     "album_url": album_url,
                 }
             )
-
+            # yield the album item
             yield item
 
         # *----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -253,7 +280,7 @@ class AlbumsSpider(scrapy.Spider):
         # get the next page link from the page
         next_page = response.css("a[title='next page']::attr(href)").get()
 
-        # return a full URL for the next page using response.urljoin to handle relative URLs, and check if it exists
+        # return a full URL for the next page using response.urljoin to handle relative URLs
         next_page = response.urljoin(next_page) if next_page else None
 
         # check if there is a next page link

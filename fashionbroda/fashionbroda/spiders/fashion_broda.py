@@ -28,7 +28,7 @@ from fashionbroda.items import FashionbrodaItem
 from fashionbroda.settings import BASE_DIR
 
 
-# define a new spider class called FashionBrodaSpider and then it inherits scraping capabilities from scrapy.Spider
+# define a new spider class called FashionBrodaSpider that inherits scraping capabilities from scrapy.Spider
 class FashionBrodaSpider(scrapy.Spider):
     # name of the spider in this case it is fashion_broda
     name = "fashion_broda"
@@ -42,14 +42,18 @@ class FashionBrodaSpider(scrapy.Spider):
     # custom export feeds
     custom_settings = {
         "FEEDS": {
+            # we use the BASE_DIR to construct the path to the output file, ensuring that it is saved in the correct location regardless of where the script is run from
             BASE_DIR
             / "fashionbroda"
             / "fashionbroda"
             / "scraped_data"
+            # this is the name of the output file "fashion_broda.json"
             / "fashion_broda.json": {
                 "format": "json",
                 "encoding": "utf8",
+                # overwrites any information that was on the file when the spider runs
                 "overwrite": True,
+                # defines the order of the extracted data
                 "fields": [
                     "seller",
                     "contact",
@@ -125,6 +129,7 @@ class FashionBrodaSpider(scrapy.Spider):
             # split the contact string at the first occurrence of ":" and take the second part, then strip whitespace from it
             contact = contact.split(":", 1)[-1].strip()
         else:
+            # log a warning if contact information is missing or does not contain a colon
             self.logger.warning(
                 f"Contact information is missing or does not contain a colon: '{contact}'"
             )
@@ -138,6 +143,7 @@ class FashionBrodaSpider(scrapy.Spider):
         # check whether the category node length matches the expected number of categories, provided above in the categories list
         # this is a defensive programming technique to catch any discrepancies in the page structure, we use the `!=` operator to check for inequality
         if len(category_node) != len(categories):
+            # log a warning message if there is a mismatch in the number of categories found versus expected
             self.logger.warning(
                 f"Expected {len(categories)} categories, but found {len(category_node)} categories on the page."
             )
@@ -159,7 +165,10 @@ class FashionBrodaSpider(scrapy.Spider):
 
             # Defensive programming: Log a warning if link or text is missing for a category
             if not category_link or not text:
+                # log the warning with details about the missing data
                 self.logger.warning(
+                    # this will log the index, {index} of the category, the missing link and the missing text, to help identify which category is affected
+                    # example : Missing data for category at index 5: link='None', text='New Arrivals'
                     f"Missing data for category at index {index}: link='{category_link}', text='{text}'"
                 )
 
@@ -173,6 +182,9 @@ class FashionBrodaSpider(scrapy.Spider):
             # *-------------------------------------------------------------------------------------------------------------------------------------------------
 
             # yield a dictionary item with the extracted data,using constructor-style for every category found on the page
+            # we can use constructor-style to create an instance of FashionbrodaItem with the extracted data, which is a more structured way to handle the scraped data and allows for better validation and organization.
+            # this is because we are utilising the items class where our schema is defined and we are only getting the data from one source, the scrapy response object, so we can directly map the extracted data to the fields defined in the FashionbrodaItem class,
+            # this also allows us to easily extend our code in the future if we want to add more fields or types of data without having to change the structure of our scraped data handling.
             # so this yield function runs multiple times, and it must be inside the for loop
             yield FashionbrodaItem(
                 {
