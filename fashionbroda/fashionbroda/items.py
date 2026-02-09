@@ -37,3 +37,13 @@ class AlbumItem(FashionbrodaItem):
     page_url = scrapy.Field()
     page_number = scrapy.Field()
     album_url = scrapy.Field()
+
+
+# we create the ImagesItem class that defines the field for the image data we want to scrape from the albums
+# it will inherit from the AlbumItem class
+class ImageItem(AlbumItem):
+    # define the fields for product images in fashionbroda webpage
+    # define the fields for the images
+    product_images = scrapy.Field()
+    size_chart_images = scrapy.Field()
+    product_data = scrapy.Field()

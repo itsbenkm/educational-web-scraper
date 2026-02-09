@@ -98,6 +98,9 @@ class AlbumsSpider(scrapy.Spider):
     # Custom export feeds for the scraped data, this is where we define how we want to export the scraped data,
     # in this case we want to export it as a JSON file with UTF-8 encoding, and we want to overwrite the file if it already exists, and we want to specify the fields that we want to include in the exported data
     custom_settings = {
+        "JOBDIR": "crawls/albums",
+        "LOG_FILE": str(BASE_DIR / "fashionbroda" / "spider_logs" / "albums.log"),
+        "LOG_LEVEL": "INFO",
         "FEEDS": {
             BASE_DIR
             / "fashionbroda"
@@ -121,7 +124,7 @@ class AlbumsSpider(scrapy.Spider):
                     "album_url",
                 ],
             }
-        }
+        },
     }
 
     # *----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -183,11 +186,11 @@ class AlbumsSpider(scrapy.Spider):
 
         # loop through each entry in the data list
         for dict in data:
-            # validate that all required fields are present and non empty
+            # validate that all required values of the fields are present and non empty
             try:
                 ctx = validate_ctx_fields_values(dict)
             except ValueError as e:
-                # log a warning message if the JSON structure is invalid, this is useful for debugging and monitoring the scraping process, to identify any issues with the data
+                # log a warning message if the JSON is empty or invalid, this is useful for debugging and monitoring the scraping process, to identify any issues with the data
                 self.logger.warning(f"Invalid entry : {e} in entry: {dict}")
                 # skip this entry and continue to the next one
                 continue

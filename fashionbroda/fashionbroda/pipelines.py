@@ -5,9 +5,13 @@
 
 
 # useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
+from scrapy.pipelines.images import ImagesPipeline
 
 
 class FashionbrodaPipeline:
     def process_item(self, item, spider):
         return item
+
+
+class ImagesPipeline(ImagesPipeline):
+    pass

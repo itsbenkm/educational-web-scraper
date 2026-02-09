@@ -41,6 +41,11 @@ class FashionBrodaSpider(scrapy.Spider):
 
     # custom export feeds
     custom_settings = {
+        "JOBDIR": "crawls/fashion_broda",
+        "LOG_FILE": str(
+            BASE_DIR / "fashionbroda" / "spider_logs" / "fashion_broda.log"
+        ),
+        "LOG_LEVEL": "INFO",
         "FEEDS": {
             # we use the BASE_DIR to construct the path to the output file, ensuring that it is saved in the correct location regardless of where the script is run from
             BASE_DIR
@@ -62,7 +67,7 @@ class FashionBrodaSpider(scrapy.Spider):
                     "category_link",
                 ],
             },
-        }
+        },
     }
 
     # list of clean categories to scrape
