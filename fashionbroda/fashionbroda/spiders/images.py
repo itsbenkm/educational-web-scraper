@@ -105,14 +105,19 @@ class ImagesSpider(scrapy.Spider):
     # in this case we want to export it as a JSON file with UTF-8 encoding, and we want to overwrite the file if it already exists, and we want to specify the fields that we want to include in the exported data
     custom_settings = {
         "JOBDIR": "crawls/images",
-        "LOG_FILE": str(BASE_DIR / "fashionbroda" / "spider_logs" / "images.log"),
+        # "LOG_FILE": str(BASE_DIR / "fashionbroda" / "spider_logs" / "images.log"),
         "LOG_LEVEL": "INFO",
         "FEEDS": {
-            BASE_DIR
-            / "fashionbroda"
-            / "fashionbroda"
-            / "scraped_data"
-            / "images.json": {
+            # ----------------------------------------
+            # RAW crawl output (URLs)
+            # ----------------------------------------
+            str(
+                BASE_DIR
+                / "fashionbroda"
+                / "fashionbroda"
+                / "scraped_data"
+                / "images.json"
+            ): {
                 "format": "json",
                 "encoding": "utf8",
                 # overwrite the file if it already exists,
@@ -132,7 +137,37 @@ class ImagesSpider(scrapy.Spider):
                     "size_chart_images",
                     "product_data",
                 ],
-            }
+            },
+            # ----------------------------------------
+            # DB-READY output (file paths)
+            # ----------------------------------------
+            str(
+                BASE_DIR
+                / "fashionbroda"
+                / "fashionbroda"
+                / "scraped_data"
+                / "images_paths.json"
+            ): {
+                "format": "json",
+                "encoding": "utf8",
+                # overwrite the file if it already exists,
+                # this is important to ensure that we are not appending to an old file with potentially outdated data, and to ensure that we are working with fresh data each time we run the spider, and to ensure that we are working with the correct file paths for the images, which can be used for further processing and analysis later on in the data processing pipeline
+                "overwrite": True,
+                # fields to include in the exported data, this is important to ensure that we are exporting the data in a structured format, and to specify which fields we want to include in the exported data, in this case we want to include the same fields as the raw crawl output, but instead of including the image URLs, we want to include the file paths for the downloaded images, which can be used for further processing and analysis later on in the data processing pipeline
+                "fields": [
+                    "seller",
+                    "contact",
+                    "category",
+                    "category_text",
+                    "category_link",
+                    "page_url",
+                    "page_number",
+                    "album_url",
+                    "product_images_paths",
+                    "size_chart_images_paths",
+                    "product_data",
+                ],
+            },
         },
     }
 

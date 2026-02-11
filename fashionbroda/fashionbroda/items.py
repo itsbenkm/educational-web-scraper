@@ -46,4 +46,6 @@ class ImageItem(AlbumItem):
     # define the fields for the images
     product_images = scrapy.Field()
     size_chart_images = scrapy.Field()
+    product_images_paths = scrapy.Field()
+    size_chart_images_paths = scrapy.Field()
     product_data = scrapy.Field()
