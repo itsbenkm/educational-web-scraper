@@ -1,5 +1,0 @@
-http://b3n_scrape_MPsgU:x9lGH4g_NUfYVJ@dc.oxylabs.io:8001
-http://b3n_scrape_MPsgU:x9lGH4g_NUfYVJ@dc.oxylabs.io:8002
-http://b3n_scrape_MPsgU:x9lGH4g_NUfYVJ@dc.oxylabs.io:8003
-http://b3n_scrape_MPsgU:x9lGH4g_NUfYVJ@dc.oxylabs.io:8004
-http://b3n_scrape_MPsgU:x9lGH4g_NUfYVJ@dc.oxylabs.io:8005
