@@ -16,8 +16,10 @@ crawls/
 fashionbroda/spider_logs/
 *.log
 
-# Scraped Data - ignore images (as requested)
-fashionbroda/fashionbroda/scraped_data/images/
+# Scraped Data - ignore images
+**/scraped_data/images/
+**/spider_logs/
+**/crawls/
 
 # OS generated files
 .DS_Store
