@@ -48,12 +48,14 @@ class FashionBrodaSpider(scrapy.Spider):
         "LOG_LEVEL": "INFO",
         "FEEDS": {
             # we use the BASE_DIR to construct the path to the output file, ensuring that it is saved in the correct location regardless of where the script is run from
-            BASE_DIR
-            / "fashionbroda"
-            / "fashionbroda"
-            / "scraped_data"
-            # this is the name of the output file "fashion_broda.json"
-            / "fashion_broda.json": {
+            str(
+                BASE_DIR
+                / "fashionbroda"
+                / "fashionbroda"
+                / "scraped_data"
+                # this is the name of the output file "fashion_broda.json"
+                / "fashion_broda.json"
+            ): {
                 "format": "json",
                 "encoding": "utf8",
                 # overwrites any information that was on the file when the spider runs

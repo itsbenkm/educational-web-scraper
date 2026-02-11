@@ -105,7 +105,7 @@ class ImagesSpider(scrapy.Spider):
     # in this case we want to export it as a JSON file with UTF-8 encoding, and we want to overwrite the file if it already exists, and we want to specify the fields that we want to include in the exported data
     custom_settings = {
         "JOBDIR": "crawls/images",
-        # "LOG_FILE": str(BASE_DIR / "fashionbroda" / "spider_logs" / "images.log"),
+        "LOG_FILE": str(BASE_DIR / "fashionbroda" / "spider_logs" / "images.log"),
         "LOG_LEVEL": "INFO",
         "FEEDS": {
             # ----------------------------------------

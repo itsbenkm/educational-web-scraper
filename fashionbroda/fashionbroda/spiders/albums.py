@@ -102,11 +102,13 @@ class AlbumsSpider(scrapy.Spider):
         "LOG_FILE": str(BASE_DIR / "fashionbroda" / "spider_logs" / "albums.log"),
         "LOG_LEVEL": "INFO",
         "FEEDS": {
-            BASE_DIR
-            / "fashionbroda"
-            / "fashionbroda"
-            / "scraped_data"
-            / "albums.json": {
+            str(
+                BASE_DIR
+                / "fashionbroda"
+                / "fashionbroda"
+                / "scraped_data"
+                / "albums.json"
+            ): {
                 "format": "json",
                 "encoding": "utf8",
                 # overwrite the file if it already exists,
