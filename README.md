@@ -1,4 +1,4 @@
-# FashionBroda Scraper
+# Educational Scraper
 
 A sophisticated, production-ready web scraping project built with Python and Scrapy. This repository is designed for educational purposes to demonstrate advanced scraping techniques, defensive programming, and robust architecture.
 
