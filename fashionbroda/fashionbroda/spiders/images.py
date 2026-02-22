@@ -240,13 +240,13 @@ class ImagesSpider(scrapy.Spider):
         # *----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
         # loop through each entry in the data list
-        for dict in data:
+        for entry in data:
             # validate that all required fields are present and non empty
             try:
-                ctx = validate_ctx_fields_values(dict)
+                ctx = validate_ctx_fields_values(entry)
             except ValueError as e:
                 # log a warning message if the JSON structure is invalid, this is useful for debugging and monitoring the scraping process, to identify any issues with the data
-                self.logger.warning(f"Invalid entry : {e} in entry: {dict}")
+                self.logger.warning(f"Invalid entry : {e} in entry: {entry}")
                 # skip this entry and continue to the next one
                 continue
             # yield a scrapy.Request for each album URL
@@ -356,6 +356,16 @@ class ImagesSpider(scrapy.Spider):
                     except ValueError:
                         # instead of failing, just pass the value as is to the json output
                         pass
+
+                # specific handling for 'sizes' to convert string to list
+                if clean_key in ("sizes", "size") and isinstance(clean_value, str):
+                    clean_value = [
+                        s for s in re.split(r"[,\-/\s]+", clean_value.strip()) if s
+                    ]
+
+                # unified empty check: set value to None if it is empty string or empty list
+                if clean_value == "" or clean_value == []:
+                    clean_value = None
 
                 # add the key-value pair to the product_data dictionary
                 # strip whitespace, convert key to lowercase and replace spaces with underscores

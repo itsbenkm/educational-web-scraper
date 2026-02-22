@@ -219,6 +219,8 @@ class ImagesPipeline(ImagesPipeline):
     # define the function that will save results after image download is complete
     def item_completed(self, results, item, info):
         # initialize the lists to hold the file paths of downloaded images
+        # We use setdefault to ensure lists exist, but we might want to clear them if we are re-populating
+        # However, for a single item pipeline pass, initialization is fine.
         item["product_images_paths"] = []
         item["size_chart_images_paths"] = []
 
@@ -228,8 +230,8 @@ class ImagesPipeline(ImagesPipeline):
                 # Check for the directory name in the path to identify image type properly
                 if "product_image" in path:
                     # if the path contains 'product_image', we append the path to the product_images_paths list in the item
-                    item["product_images_paths"].append(path)
+                    item.setdefault("product_images_paths", []).append(path)
                 elif "size_chart_image" in path:
                     # if the path contains 'size_chart_image', we append the path to the size_chart_images_paths list in the item
-                    item["size_chart_images_paths"].append(path)
+                    item.setdefault("size_chart_images_paths", []).append(path)
         return item
