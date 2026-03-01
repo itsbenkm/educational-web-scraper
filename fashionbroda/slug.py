@@ -43,7 +43,7 @@ except Exception as e:
 # this function takes a category string as input, removes any leading or trailing whitespace using the strip() method,
 # and converts the string to lowercase using the lower() method. This normalization process ensures that the category is in a consistent format, which can be useful for tasks such as categorization, filtering, or generating slugs for URLs.
 def normalize_category(category):
-    return category.strip().lower()
+    return category.strip().lower().replace(" ", "-")
 
 
 # extract the album hash, and pass the argument images_path, which is a string representing the path to the album images.
