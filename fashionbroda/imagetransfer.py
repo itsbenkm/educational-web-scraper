@@ -1,5 +1,6 @@
 # this script handles getting the images ready for upload to r2 by moving the images from the scraped_data directory to the upload_ready directory,
-# and renaming the images to match the album hash, which is extracted from the images_path field in the JSON data. This is done to ensure that the images are named consistently and can be easily matched with their corresponding albums when uploaded to R2.
+# and renaming the images to match the album hash, which is extracted from the images_path field in the JSON data.
+# This is done to ensure that the images are named consistently and can be easily matched with their corresponding albums when uploaded to R2.
 
 # import modules
 import json
@@ -10,7 +11,9 @@ from pathlib import Path
 images_dir = Path(
     "/home/b3n/Desktop/scraped_reps/fashionbroda/fashionbroda/fashionbroda/fashionbroda/scraped_data/images"
 )
-# define the json file path that contains the slug and category information for each product, which will be used to create the directory structure for the images in the upload_ready directory. The JSON file is expected to have a list of products, where each product has a "category" and "slug" field that will be used to organize the images into folders based on their category and slug. This organization helps maintain a clear structure for the images when they are uploaded to R2, making it easier to manage and access them later on.
+# define the json file path that contains the slug and category information for each product, which will be used to create the directory structure for the images in the upload_ready directory.
+#  The JSON file is expected to have a list of products, where each product has a "category" and "slug" field that will be used to organize the images into folders based on their category and slug.
+# This organization helps maintain a clear structure for the images when they are uploaded to R2, making it easier to manage and access them later on.
 json_file_path = Path(
     "/home/b3n/Desktop/scraped_reps/fashionbroda/fashionbroda/fashionbroda/fashionbroda/scraped_data/slug.json"
 )
@@ -85,6 +88,7 @@ def build_upload_ready():
                 os.link(source, destination)
 
 
-# call the build_upload_ready function to execute the process of preparing the images for upload to r2. This function will read the JSON data, create the necessary directories, and copy the images to their respective locations in the upload_ready directory, renaming them according to the specified format.
+# call the build_upload_ready function to execute the process of preparing the images for upload to r2.
+# This function will read the JSON data, create the necessary directories, and copy the images to their respective locations in the upload_ready directory, renaming them according to the specified format.
 if __name__ == "__main__":
     build_upload_ready()
